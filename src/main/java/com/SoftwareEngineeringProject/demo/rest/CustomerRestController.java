@@ -140,79 +140,89 @@ public class CustomerRestController {
 
     }
 
-    // @PutMapping("/addBookmark")
-    // public ResponseEntity<String> addBookmark(@RequestBody Map<String, String> request) {
-    //     String userId = request.get("userId");
-    //     String foodId = request.get("foodId");
-    //     customerService.addBookmark(userId, foodId);
-    //     return ResponseEntity.ok("Bookmark added successfully");
-    // }
     @PutMapping("/addBookmark")
-    public ResponseEntity<String> addBookmark(@RequestBody JsonNode req){
-        String UUID= req.get("uUID").asText();
-        String id_food= req.get("id_food").asText();
+    public ResponseEntity<ObjectNode> addBookmark(@RequestBody JsonNode req) {
+        String UUID = req.get("uUID").asText();
+        String id_food = req.get("id_food").asText();
 
-        boolean foodExist=checkFoodExist(id_food);
-        boolean userExist=checkUserExist(UUID);
-
-        if(foodExist && userExist){
-            updateCustomerBookmark(UUID, id_food);
-            return new ResponseEntity<>("Bookmark added successfully", HttpStatus.OK);
-        }else{
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-
-        }
-
-    private boolean checkFoodExist(String FoodId){
-        Query q=new Query(Criteria.where("id_food").is(FoodId));
-        long count = mongotemplate.count(q, Food.class);
-        return count > 0;
-    }
-
-    private boolean checkUserExist(String userID){
-        Query q=new Query(Criteria.where("uUID").is(userID));
-        long count=mongotemplate.count(q,Customer.class);
-        return count>0;
-    }
-        
-    private void updateCustomerBookmark(String uUID, String id_food){
-        Query q=new Query(Criteria.where("uUID").is(uUID));
-        Update update=new Update().addToSet("bookmarks",id_food );
-        mongotemplate.updateFirst(q, update, Customer.class);
-    }
-
-   
-    @GetMapping("/getFoodId")
-    private ResponseEntity<ObjectNode> getFoodIds(@RequestBody JsonNode req){
-        
-        String uUID= req.get("uUID").asText();
-
-        boolean userStatus=checkUserExist(uUID);
+        boolean foodExist = checkFoodExist(id_food);
+        boolean userExist = checkUserExist(UUID);
 
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode resultNode = objectMapper.createObjectNode();
 
-        if(userStatus){
-            resultNode.put("uUID", uUID);
-            
-            Query q=new Query(Criteria.where("uUID").is(uUID));
-            Customer c= mongotemplate.findOne(q, Customer.class);
-            List<String> IdsToBeReturned= c.getBookmarks();
-            //System.out.print(c);
-            ArrayNode bookmarkArr=objectMapper.createArrayNode();
+        if (!userExist) {
+            resultNode.put("status", "fail");
+            resultNode.put("description", "user not found");
+            return new ResponseEntity<>(resultNode, HttpStatus.NOT_FOUND);
+        }
 
-            for(String s: IdsToBeReturned){
-                //System.out.println(s);
+        if (!foodExist) {
+            resultNode.put("status", "fail");
+            resultNode.put("description", "food not found");
+            return new ResponseEntity<>(resultNode, HttpStatus.NOT_FOUND);
+        }
+
+        Query query = new Query(Criteria.where("uUID").is(UUID));
+        Update update = new Update();
+
+        if (isFoodInBookmarks(UUID, id_food)) {
+            update.pull("bookmarks", id_food);
+            resultNode.put("status", "successful");
+            resultNode.put("bookmark", "food ID removed");
+        } else {
+            update.addToSet("bookmarks", id_food);
+            resultNode.put("status", "successful");
+            resultNode.put("bookmark", "food ID added");
+        }
+
+        mongotemplate.updateFirst(query, update, Customer.class);
+        return new ResponseEntity<>(resultNode, HttpStatus.ACCEPTED);
+    }
+
+    private boolean isFoodInBookmarks(String UUID, String id_food) {
+        Query query = new Query(Criteria.where("uUID").is(UUID).and("bookmarks").in(id_food));
+        return mongotemplate.exists(query, Customer.class);
+    }
+
+    private boolean checkFoodExist(String FoodId) {
+        Query query = new Query(Criteria.where("id_food").is(FoodId));
+        return mongotemplate.exists(query, Food.class);
+    }
+
+    private boolean checkUserExist(String userID) {
+        Query query = new Query(Criteria.where("uUID").is(userID));
+        return mongotemplate.exists(query, Customer.class);
+    }
+
+    @GetMapping("/getFoodId")
+    private ResponseEntity<ObjectNode> getFoodIds(@RequestBody JsonNode req) {
+
+        String uUID = req.get("uUID").asText();
+
+        boolean userStatus = checkUserExist(uUID);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode resultNode = objectMapper.createObjectNode();
+
+        if (userStatus) {
+            resultNode.put("uUID", uUID);
+
+            Query q = new Query(Criteria.where("uUID").is(uUID));
+            Customer c = mongotemplate.findOne(q, Customer.class);
+            List<String> IdsToBeReturned = c.getBookmarks();
+            // System.out.print(c);
+            ArrayNode bookmarkArr = objectMapper.createArrayNode();
+
+            for (String s : IdsToBeReturned) {
+                // System.out.println(s);
                 bookmarkArr.add(s);
             }
             resultNode.set("Bookmarks", bookmarkArr);
-        
-        
+
         }
         return ResponseEntity.ok(resultNode);
-        
+
     }
-    
 
 }
