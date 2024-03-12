@@ -169,11 +169,11 @@ public class CustomerRestController {
         if (isFoodInBookmarks(UUID, id_food)) {
             update.pull("bookmarks", id_food);
             resultNode.put("status", "successful");
-            resultNode.put("bookmark", "food ID removed");
+            resultNode.put("bookmark", "unbookmarked");
         } else {
             update.addToSet("bookmarks", id_food);
             resultNode.put("status", "successful");
-            resultNode.put("bookmark", "food ID added");
+            resultNode.put("bookmark", "bookmarked");
         }
 
         mongotemplate.updateFirst(query, update, Customer.class);
