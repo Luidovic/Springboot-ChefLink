@@ -3,6 +3,7 @@ package com.SoftwareEngineeringProject.demo.dao;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,4 +43,17 @@ public class FoodService {
         AggregationResults<DBObject> foodList = foodRepository.getFoodItemsGroupedByCuisine(amount, groupBy);
         return foodList.getMappedResults();
     }
+
+    // public Food findById(String foodId) {
+    //     // Implement logic to retrieve the food item by its ID from MongoDB
+        
+    //     List<Food> optionalFood = foodRepository.findByFoodId(foodId);
+    //     System.out.println(optionalFood.toString());
+    //     return new Food();
+    // }
+
+    public Food getbyIdFood(String id){
+        return foodRepository.getbyIdFood(id);
+    }
+
 }

@@ -11,7 +11,6 @@ import com.SoftwareEngineeringProject.demo.subEntity.FoodOption;
 
 @Document(collection = "Food")
 public class Food {
-    
     private String id_food;
     private String name;
     private double price;
@@ -23,7 +22,8 @@ public class Food {
     private List<FoodOption> options;
     private FoodCategory category;
 
-    public Food(String id_food, String name, double price, double total_rating, String picture, String timing, List<String> ingredients,
+    public Food(String id_food, String name, double price, double total_rating, String picture, String timing,
+            List<String> ingredients,
             String description,
             List<FoodOption> options, FoodCategory category) {
         this.id_food = id_food;
@@ -73,11 +73,11 @@ public class Food {
         this.picture = picture;
     }
 
-    public List<String> getIngredints() {
+    public List<String> getIngredients() {
         return ingredients;
     }
 
-    public void setIngredints(List<String> ingredients) {
+    public void setIngredients(List<String> ingredients) {
         this.ingredients = ingredients;
     }
 

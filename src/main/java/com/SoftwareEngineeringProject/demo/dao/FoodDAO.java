@@ -13,17 +13,21 @@ import com.SoftwareEngineeringProject.demo.entity.Food;
 import com.SoftwareEngineeringProject.demo.helperEntity.CuisineGroup;
 import com.mongodb.DBObject;
 import com.mongodb.lang.Nullable;
+import java.util.*;
 
-public interface FoodDAO extends MongoRepository<Food,String> {
-    @Aggregation(pipeline = {"" +
-        "{$group: { _id: '$?1', collections: { $push: {" +
+public interface FoodDAO extends MongoRepository<Food, String>{
+    @Aggregation(pipeline = { "" +
+            "{$group: { _id: '$?1', collections: { $push: {" +
             "price: '$price'," +
             "timing: '$timing'," +
             "name: '$name'," +
             "total_rating: '$total_rating'," +
             "picture: '$picture'," +
             "id_food: '$id_food'," +
-        "} } } }",
-        "{$project: { _id: 1, collections: { $slice: ['$collections', ?0] } }}"})
+            "} } } }",
+            "{$project: { _id: 1, collections: { $slice: ['$collections', ?0] } }}" })
     AggregationResults<DBObject> getFoodItemsGroupedByCuisine(int amount, String groupBy);
+
+    @Query(value = "{ 'id_food' : ?0 }")
+    Food getbyIdFood(String id);
 }

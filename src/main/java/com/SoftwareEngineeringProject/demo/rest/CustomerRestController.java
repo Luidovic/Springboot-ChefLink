@@ -140,6 +140,8 @@ public class CustomerRestController {
         if (genderS.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("gender is a must");
 
+        
+
         customer.setuUID(uUIDS);
         customer.setfirstName(firstNameS);
         customer.setemail(emailS);
@@ -170,7 +172,7 @@ public class CustomerRestController {
 
         Criteria criteria = Criteria.where(typeS).is(valueS);
         Query query = new Query(criteria);
-
+        
         Customer customer = mongotemplate.findOne(query, Customer.class);
 
         JsonNode attribsArray = req.get("attribs");

@@ -94,7 +94,7 @@ public class FoodRestController {
             responseNode.put("id_food", foodId);
 
             ArrayNode ingredientsArray = objectMapper.createArrayNode();
-            for (String ingredient : food.getIngredints()) {
+            for (String ingredient : food.getIngredients()) {
                 ingredientsArray.add(ingredient);
             }
             responseNode.set("ingredients", ingredientsArray);
