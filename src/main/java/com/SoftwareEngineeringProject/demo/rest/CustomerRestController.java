@@ -71,17 +71,93 @@ public class CustomerRestController {
 
     // }
 
-    @GetMapping("/Customer")
+    @GetMapping("/GetAllCustomers")
     public List<Customer> getCustomers() {
 
         return customerService.findAll();
     }
 
-    @PutMapping("/Customer/Add") // Corrected endpoint check @PutMapping
-    public ResponseEntity<String> addCustomer(@RequestBody Customer customer) {
-        System.out.println(customer.getuUID());
+    // @PutMapping("/Customer/Add") // Corrected endpoint check @PutMapping
+    // public ResponseEntity<String> addCustomer(@RequestBody Customer customer) {
+    // System.out.println(customer.getuUID());
+    // customerService.saveCustomer(customer);
+    // return new ResponseEntity<>("User added successfully", HttpStatus.CREATED);
+    // }
+
+    @PutMapping("/Customer/AddToDB") // BOOKMARKS CASES ARE NOT COVERED
+    public ResponseEntity<String> addCustomer(@RequestBody JsonNode req) {
+        JsonNode username = req.get("username");
+        JsonNode uUID = req.get("uUID");
+        JsonNode email = req.get("email");
+        JsonNode phone_number = req.get("phone_number");
+        JsonNode gender = req.get("gender");
+        JsonNode firstName = req.get("firstName");
+        JsonNode lastName = req.get("lastName");
+        JsonNode dateOfBirth = req.get("dateOfBirth");
+        JsonNode bookmarks = req.get("bookmarks"); // Array of String
+        JsonNode p_URL = req.get("p_URL");
+
+        String usernameS = username.asText();
+        String uUIDS = uUID.asText();
+        String emailS = email.asText();
+        String phone_numberS = phone_number.asText();
+        String genderS = gender.asText();
+        String firstNameS = firstName.asText();
+        String lastNameS = lastName.asText();
+        String dateOfBirthS = dateOfBirth.asText();
+        String p_URLS = p_URL.asText();
+        List<String> bookmarksList = new ArrayList<>();
+
+        Customer customer = new Customer();
+
+        if (uUIDS.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("uUID is a must");
+
+        if (checkUserExist(uUIDS))
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(uUIDS + " is already found in the Database");
+
+        if (usernameS.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("username is a must");
+
+        if (firstNameS.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("first name is a must");
+
+        if (lastNameS.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("last name is a must");
+
+        if (dateOfBirthS.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("date of birth is a must");
+
+        if (phone_numberS.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("phone number is a must");
+
+        if (p_URLS.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("p_URL is a must");
+
+        if (emailS.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("email is a must");
+
+        if (genderS.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("gender is a must");
+
+        customer.setuUID(uUIDS);
+        customer.setfirstName(firstNameS);
+        customer.setemail(emailS);
+        customer.setgender(genderS);
+        customer.setlastName(lastNameS);
+        customer.setp_url(p_URLS);
+        customer.setphone_Number(phone_numberS);
+        customer.setusername(usernameS);
+        customer.setDateOfBirth(dateOfBirthS);
+
+        for (JsonNode bookmark : bookmarks)
+            bookmarksList.add(bookmark.asText());
+
+        customer.setBookmarks(bookmarksList);
+
         customerService.saveCustomer(customer);
-        return new ResponseEntity<>("User added successfully", HttpStatus.CREATED);
+        return ResponseEntity.ok("Customer saved successfully");
+
     }
 
     @GetMapping("/Customer/GetAttrib")
