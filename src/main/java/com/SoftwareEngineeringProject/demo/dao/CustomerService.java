@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 // import java.util.Optional;
 // import java.util.function.Function;
+import java.util.Optional;
 
 // import org.springframework.core.io.ClassPathResource;
 // import org.springframework.core.io.Resource;
@@ -66,6 +67,10 @@ public class CustomerService {
         } else {
             // Handle user not found scenario
         }
+    }
+
+    public Customer findCustomerById(String customerId) {
+        return customerRepository.findByuUID(customerId);
     }
 
 }

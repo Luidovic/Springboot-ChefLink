@@ -14,6 +14,6 @@ public interface CustomerDAO extends MongoRepository<Customer, String> {
 
     Customer findByUsername(String username);
 
-            
+    Customer findByuUID(String uUID);
 
 }

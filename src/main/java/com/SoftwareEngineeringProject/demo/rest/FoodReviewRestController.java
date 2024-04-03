@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.SoftwareEngineeringProject.demo.dao.CustomerService;
 import com.SoftwareEngineeringProject.demo.dao.FoodReviewService;
 import com.SoftwareEngineeringProject.demo.dao.FoodService;
 import com.SoftwareEngineeringProject.demo.entity.Customer;
@@ -32,65 +33,58 @@ public class FoodReviewRestController {
     private FoodReviewService foodReviewService;
     private FoodService foodService;
     private MongoTemplate mongoTemplate;
+    private CustomerService customerService;
 
     public FoodReviewRestController(FoodReviewService foodReviewService, FoodService foodService,
-            MongoTemplate mongoTemplate) {
+            MongoTemplate mongoTemplate, CustomerService customerService) {
         this.foodReviewService = foodReviewService;
         this.foodService = foodService;
         this.mongoTemplate = mongoTemplate;
+        this.customerService = customerService;
     }
 
-    @GetMapping("/get_by_food_id") // Return the comment & rating and return the username, the P_URL and the uUID +
-                                   // // the whole information about the specific food.
+    @GetMapping("/get_by_food_id") // Tested the major Cases
     public ResponseEntity<ObjectNode> getFoodReview(@RequestBody JsonNode foodId) {
-        // List<FoodReview> result =
-        // foodReviewService.findByFoodId(foodId.get("foodId").asText());
-        // ObjectMapper objectMapper = new ObjectMapper();
-        // JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
-        // ObjectNode responseNode = nodeFactory.objectNode();
-        // ArrayNode arrayNode = objectMapper.valueToTree(result);
-        // responseNode.set("data", arrayNode);
 
         Food res = foodService.getbyIdFood(foodId.get("foodId").asText());
-        System.out.println(res);
-        ObjectMapper objectMapper = new ObjectMapper();
 
+        if (res == null) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectNode responseNode = objectMapper.createObjectNode();
+            responseNode.put("error", "FOOD_NOT_FOUND");
+            responseNode.put("info", "The given food ID is not present in the Database Or Does not have a review");
+            return ResponseEntity.badRequest().body(responseNode);
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode responseNode = objectMapper.valueToTree(res);
 
-        List<Customer> customerList; // List of customers who commented and rated the food.
-
         String foodIdValue = foodId.get("foodId").asText();
-
         Criteria criteria = Criteria.where("id_food").is(foodIdValue);
-
         Query query = new Query(criteria);
 
-        // List<FoodReview> reviews= mongoTemplate.findAll(FoodReview.class,
-        // Query.query(Criteria.where("id_food").is(foodIdValue)));
+        List<FoodReview> foodReviews = mongoTemplate.find(query, FoodReview.class);
 
-        // System.out.print(reviews.toString());
-        return null;
+        ArrayNode customersNode = objectMapper.createArrayNode();
+
+        for (FoodReview f : foodReviews) {
+            ObjectNode customerNode = objectMapper.createObjectNode();
+            Customer customer = customerService.findCustomerById(f.getID_User());
+
+            if (customer == null) {
+                customerNode.put("error", "CUSTOMER_NOT_FOUND");
+                customerNode.put("info", "The customer is not present in the database");
+                return ResponseEntity.badRequest().body(customerNode);
+            }
+
+            customerNode.put("customer ID", f.getID_User());
+            customerNode.put("username", customer.getusername());
+            customerNode.put("Profile Picture", customer.getP_URL());
+            customerNode.put("comment", f.getComment());
+            customerNode.put("rating", f.getRating());
+            customersNode.add(customerNode);
+        }
+        responseNode.set("customers", customersNode);
+        return ResponseEntity.ok(responseNode);
     }
-
-    // private ObjectNode convertFoodToNode(Food food) {
-    // // Implement logic to populate the ObjectNode with food details
-    // // from your Food model class properties
-    // ObjectNode response = new ObjectMapper().createObjectNode();
-    // response.put("name", food.getName());
-    // response.put("description", food.getDescription());
-    // // Add other relevant properties from your Food model
-    // return response;
-    // }
-
-    // @GetMapping("/getFoodReview")
-    // public ResponseEntity<ObjectMapper> getTheReview(@RequestBody JsonNode
-    // request){
-
-    // String FoodIdValue= request.get("foodId").asText();
-
-    // // Query query = new Query(Criteria.where("id_food").is(FoodIdValue));
-
-    // return ResponseEntity.ok();
-    // }
-
 }

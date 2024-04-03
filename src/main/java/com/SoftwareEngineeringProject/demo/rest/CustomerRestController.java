@@ -36,40 +36,15 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 @RequestMapping("/api")
 public class CustomerRestController {
     private final CustomerService customerService;
-    private final CustomerDAO customerDAO;
+    // private final CustomerDAO customerDAO;
     private final MongoTemplate mongotemplate;
 
     public CustomerRestController(CustomerService customerService, CustomerDAO customerDAO,
             MongoTemplate mongotemplate) {
         this.customerService = customerService;
-        this.customerDAO = customerDAO;
+        // this.customerDAO = customerDAO;
         this.mongotemplate = mongotemplate;
     }
-
-    // private List<Customer> cust;
-
-    // @PostConstruct
-    // public void loadData() {
-    // cust = new ArrayList<>();
-    // cust.add(new Customer("John1", "1", "JohnDoe1@lau.edu", "+961823495",
-    // "Malee", "John1", "Doe1", "2/5/2002",
-    // "@3245324"));
-    // cust.add(new Customer("John2", "2", "JohnDoe2@lau.edu", "+96182395",
-    // "Maleee", "John2", "Doe2", "3/5/2002",
-    // "@324555"));
-    // cust.add(
-    // new Customer("John3", "3", "JohnDoe3@lau.edu", "+96182345", "Maleeee",
-    // "John3", "Doe3", "23/56/2002",
-    // "@3245324"));
-    // cust.add(new Customer("John4", "4", "JohnDoe4@lau.edu", "+9618245",
-    // "Maleeeee", "John4", "Doe4",
-    // "23/566/2002",
-    // "@32453245555"));
-    // cust.add(new Customer("John5", "5", "JohnDoe5@lau.edu", "+961825", "Mal",
-    // "John5", "Doe5", "23/5/20022",
-    // "@32455555"));
-
-    // }
 
     @GetMapping("/GetAllCustomers")
     public List<Customer> getCustomers() {
@@ -77,103 +52,91 @@ public class CustomerRestController {
         return customerService.findAll();
     }
 
-    // @PutMapping("/Customer/Add") // Corrected endpoint check @PutMapping
-    // public ResponseEntity<String> addCustomer(@RequestBody Customer customer) {
-    // System.out.println(customer.getuUID());
-    // customerService.saveCustomer(customer);
-    // return new ResponseEntity<>("User added successfully", HttpStatus.CREATED);
-    // }
+    @PutMapping("/Customer/AddC") // test cases covered
+    public ResponseEntity<ObjectNode> addCustomer(@RequestBody JsonNode req) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode responseNode = objectMapper.createObjectNode();
 
-    @PutMapping("/Customer/AddToDB") // BOOKMARKS CASES ARE NOT COVERED
-    public ResponseEntity<String> addCustomer(@RequestBody JsonNode req) {
-        JsonNode username = req.get("username");
-        JsonNode uUID = req.get("uUID");
-        JsonNode email = req.get("email");
-        JsonNode phone_number = req.get("phone_number");
-        JsonNode gender = req.get("gender");
-        JsonNode firstName = req.get("firstName");
-        JsonNode lastName = req.get("lastName");
-        JsonNode dateOfBirth = req.get("dateOfBirth");
-        JsonNode bookmarks = req.get("bookmarks"); // Array of String
-        JsonNode p_URL = req.get("p_URL");
+        String username = req.get("username").asText();
+        String uUID = req.get("uUID").asText();
+        String email = req.get("email").asText();
+        String phone_number = req.get("phone_Number").asText();
+        String gender = req.get("gender").asText();
+        String firstName = req.get("firstName").asText();
+        String lastName = req.get("lastName").asText();
+        String dateOfBirth = req.get("dateOfBirth").asText();
+        List<String> bookmarks = new ArrayList<>();
+        JsonNode bookmarksNode = req.get("bookmarks");
+        if (bookmarksNode.isArray()) {
+            for (JsonNode bookmark : bookmarksNode) {
+                bookmarks.add(bookmark.asText());
+            }
+        }
+        String p_URL = req.get("p_URL").asText();
 
-        String usernameS = username.asText();
-        String uUIDS = uUID.asText();
-        String emailS = email.asText();
-        String phone_numberS = phone_number.asText();
-        String genderS = gender.asText();
-        String firstNameS = firstName.asText();
-        String lastNameS = lastName.asText();
-        String dateOfBirthS = dateOfBirth.asText();
-        String p_URLS = p_URL.asText();
-        List<String> bookmarksList = new ArrayList<>();
+        // Validate attributes
+        List<String> errorMessages = validateCustomerAttributes(uUID, username, email, phone_number, gender, firstName,
+                lastName, dateOfBirth, p_URL);
+        if (!errorMessages.isEmpty()) {
+            responseNode.put("error", "CUSTOMER_NOT_ADDED");
+            responseNode.set("info", objectMapper.valueToTree(errorMessages));
+            return ResponseEntity.badRequest().body(responseNode);
+        }
 
-        Customer customer = new Customer();
-
-        if (uUIDS.isEmpty())
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("uUID is a must");
-
-        if (checkUserExist(uUIDS))
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(uUIDS + " is already found in the Database");
-
-        if (usernameS.isEmpty())
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("username is a must");
-
-        if (firstNameS.isEmpty())
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("first name is a must");
-
-        if (lastNameS.isEmpty())
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("last name is a must");
-
-        if (dateOfBirthS.isEmpty())
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("date of birth is a must");
-
-        if (phone_numberS.isEmpty())
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("phone number is a must");
-
-        if (p_URLS.isEmpty())
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("p_URL is a must");
-
-        if (emailS.isEmpty())
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("email is a must");
-
-        if (genderS.isEmpty())
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("gender is a must");
-
-        
-
-        customer.setuUID(uUIDS);
-        customer.setfirstName(firstNameS);
-        customer.setemail(emailS);
-        customer.setgender(genderS);
-        customer.setlastName(lastNameS);
-        customer.setp_url(p_URLS);
-        customer.setphone_Number(phone_numberS);
-        customer.setusername(usernameS);
-        customer.setDateOfBirth(dateOfBirthS);
-
-        for (JsonNode bookmark : bookmarks)
-            bookmarksList.add(bookmark.asText());
-
-        customer.setBookmarks(bookmarksList);
-
+        Customer customer = new Customer(username, uUID, email, phone_number, gender, firstName, lastName, dateOfBirth,
+                bookmarks, p_URL);
         customerService.saveCustomer(customer);
-        return ResponseEntity.ok("Customer saved successfully");
+        return ResponseEntity.ok(responseNode);
+    }
 
+    // Helper method to validate customer attributes
+    private List<String> validateCustomerAttributes(String uUID, String username, String email, String phone_number,
+            String gender, String firstName, String lastName, String dateOfBirth, String p_URL) {
+        List<String> errorMessages = new ArrayList<>();
+        if (uUID.isEmpty())
+            errorMessages.add("uUID must not be empty");
+        if (checkUserExist(uUID))
+            errorMessages.add("The customer already exists in the database");
+        if (username.isEmpty())
+            errorMessages.add("Username must not be empty");
+        if (firstName.isEmpty())
+            errorMessages.add("First name must not be empty");
+        if (lastName.isEmpty())
+            errorMessages.add("Last name must not be empty");
+        if (dateOfBirth.isEmpty())
+            errorMessages.add("Date of birth must not be empty");
+        if (phone_number.isEmpty())
+            errorMessages.add("Phone number must not be empty");
+        if (p_URL.isEmpty())
+            errorMessages.add("Profile Picture must not be empty");
+        if (email.isEmpty())
+            errorMessages.add("Email must not be empty");
+        if (gender.isEmpty())
+            errorMessages.add("Gender must not be empty");
+        return errorMessages;
     }
 
     @GetMapping("/Customer/GetAttrib")
-    public ObjectNode getUserAttributes(@RequestBody JsonNode req) {
+    public ObjectNode getUserAttributes(@RequestBody JsonNode req) { // handled some of the cases not sure if there is
+                                                                     // more?
         JsonNode type = req.get("id_type");
         JsonNode value = req.get("value");
 
         String typeS = type.asText();
         String valueS = value.asText();
 
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode resultNode = objectMapper.createObjectNode();
+
         Criteria criteria = Criteria.where(typeS).is(valueS);
         Query query = new Query(criteria);
-        
+
         Customer customer = mongotemplate.findOne(query, Customer.class);
+
+        if (customer == null) {
+            resultNode.put("error", "CUSTOMER_NOT_FOUND");
+            return resultNode;
+        }
 
         JsonNode attribsArray = req.get("attribs");
 
@@ -184,8 +147,6 @@ public class CustomerRestController {
             need.add(attribute);
         }
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode resultNode = objectMapper.createObjectNode();
         try {
             for (int i = 0; i < need.size(); i++) {
                 String field = need.get(i);
@@ -218,7 +179,7 @@ public class CustomerRestController {
 
     }
 
-    @PutMapping("/addBookmark")
+    @PutMapping("/addBookmark") // test cases covered
     public ResponseEntity<ObjectNode> addBookmark(@RequestBody JsonNode req) {
         String UUID = req.get("uUID").asText();
         String id_food = req.get("id_food").asText();
@@ -273,32 +234,35 @@ public class CustomerRestController {
         return mongotemplate.exists(query, Customer.class);
     }
 
-    @GetMapping("/getFoodId")
+    @GetMapping("/getBookMarkedFoodId")
     private ResponseEntity<ObjectNode> getFoodIds(@RequestBody JsonNode req) {
 
         String uUID = req.get("uUID").asText();
 
-        boolean userStatus = checkUserExist(uUID);
-
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode resultNode = objectMapper.createObjectNode();
 
-        if (userStatus) {
-            resultNode.put("uUID", uUID);
+        resultNode.put("uUID", uUID);
 
-            Query q = new Query(Criteria.where("uUID").is(uUID));
-            Customer c = mongotemplate.findOne(q, Customer.class);
-            List<String> IdsToBeReturned = c.getBookmarks();
-            // System.out.print(c);
-            ArrayNode bookmarkArr = objectMapper.createArrayNode();
+        Query q = new Query(Criteria.where("uUID").is(uUID));
+        Customer c = mongotemplate.findOne(q, Customer.class);
 
-            for (String s : IdsToBeReturned) {
-                // System.out.println(s);
-                bookmarkArr.add(s);
-            }
-            resultNode.set("Bookmarks", bookmarkArr);
-
+        if (c == null) {
+            resultNode.put("error", "CUSTOMER_NOT_FOUND");
+            resultNode.put("info", "the customer is not found in the database");
+            return ResponseEntity.badRequest().body(resultNode);
         }
+
+        List<String> IdsToBeReturned = c.getBookmarks();
+
+        ArrayNode bookmarkArr = objectMapper.createArrayNode();
+
+        for (String s : IdsToBeReturned) {
+
+            bookmarkArr.add(s);
+        }
+        resultNode.set("Bookmarks", bookmarkArr);
+
         return ResponseEntity.ok(resultNode);
 
     }
