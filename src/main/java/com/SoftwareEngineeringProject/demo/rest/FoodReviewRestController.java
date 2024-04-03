@@ -23,7 +23,7 @@ import com.mongodb.client.MongoCollection;
 
 import java.util.List;
 
-import javax.management.Query;
+import org.springframework.data.mongodb.core.query.Query;
 
 @RestController
 @RequestMapping("/api/foodreview")
