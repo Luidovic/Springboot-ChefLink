@@ -23,6 +23,7 @@ import com.SoftwareEngineeringProject.demo.dao.CustomerDAO;
 import com.SoftwareEngineeringProject.demo.dao.CustomerService;
 import com.SoftwareEngineeringProject.demo.entity.Customer;
 import com.SoftwareEngineeringProject.demo.entity.Food;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 //import jakarta.annotation.PostConstruct;
 
@@ -30,6 +31,7 @@ import com.SoftwareEngineeringProject.demo.entity.Food;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.mongodb.client.result.UpdateResult;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
 @RestController
@@ -272,6 +274,128 @@ public class CustomerRestController {
         resultNode.set("Bookmarks", bookmarkArr);
 
         return ResponseEntity.ok(resultNode);
+
+    }
+
+    @PutMapping("/UpdateInfo")
+    private ResponseEntity<ObjectNode> updateinfo(@RequestBody JsonNode req) {
+
+        String uUID = req.get("uUID").asText();
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode resultNode = objectMapper.createObjectNode();
+        resultNode.put("uUID", uUID);
+
+        Query q = new Query(Criteria.where("uUID").is(uUID));
+        Customer customer = mongotemplate.findOne(q, Customer.class);
+
+        if (customer == null) {
+            resultNode.put("error", "CUSTOMER_NOT_FOUND");
+            resultNode.put("info", "This customer is not in the database");
+            return ResponseEntity.badRequest().body(resultNode);
+        }
+
+        List<String> AcceptedAttributes = new ArrayList<>();
+        AcceptedAttributes.addAll(Arrays.asList("uUID", "username", "email", "phone_Number",
+                "gender", "firstName", "lastName", "dateOfBirth", "bookmarks", "p_URL", "locations"));
+
+        JsonNode toChangeNode = req.get("To Change");
+        JsonNode newValuesNode = req.get("New Values");
+
+        List<String> toChange = new ArrayList<>();
+        List<String> newValues = new ArrayList<>();
+
+        for (JsonNode node : toChangeNode) {
+            toChange.add(node.asText());
+        }
+
+        for (JsonNode node : newValuesNode) {
+            newValues.add(node.asText());
+        }
+
+        if (toChange.size() != newValues.size()) {
+            resultNode.put("error", "LIST_LENGTH_MISMATCH");
+            return ResponseEntity.badRequest().body(resultNode);
+        }
+
+        for (int i = 0; i < toChange.size(); i++) {
+            String attribute = toChange.get(i);
+
+            if (!AcceptedAttributes.contains(attribute)) {
+                resultNode.put("error", "ATTRIBUTE_NOT_FOUND");
+                resultNode.put("info", attribute + " is not present in the Database");
+                return ResponseEntity.badRequest().body(resultNode);
+            }
+
+        }
+
+        for (int i = 0; i < toChange.size(); i++) {
+
+            String attributeToChange = toChange.get(i);
+            String newValue = newValues.get(i);
+            // System.out.println("Attribute to change " + i + " is: " + attributeToChange);
+            // System.out.println("New Value to set " + i + " is: " + newValue);
+            switch (attributeToChange) {
+
+                case "username":
+                    // customer.setusername(newValue);
+                    resultNode.put("username", "cannot be changed");
+                    break;
+
+                case "email":
+                    // customer.setemail(newValue);
+                    resultNode.put("email", "cannot be changed");
+                    break;
+
+                case "phone_Number":
+                    customer.setphone_Number(newValue);
+                    break;
+
+                case "gender":
+                    customer.setgender(newValue);
+                    break;
+
+                case "firstName":
+                    customer.setfirstName(newValue);
+                    break;
+
+                case "lastName":
+                    customer.setlastName(newValue);
+                    break;
+
+                case "dateOfBirth":
+                    customer.setDateOfBirth(newValue);
+                    break;
+
+                case "p_URL":
+                    customer.setp_url(newValue);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        Update update = new Update();
+        for (int i = 0; i < toChange.size(); i++) {
+            String attributeToChange = toChange.get(i);
+            String newValue = newValues.get(i);
+
+            if (attributeToChange.equals("username") || attributeToChange.equals("email")) {
+                continue;
+            }
+            // System.out.println("Attribute to change now: " + attributeToChange);
+            update.set(attributeToChange, newValue);
+        }
+        UpdateResult updateResult = mongotemplate.updateFirst(q, update, Customer.class);
+
+        if (updateResult.getModifiedCount() > 0) {
+            resultNode.put("success", "ATTRIBUTES_UPDATED");
+            return ResponseEntity.ok().body(resultNode);
+        } else {
+            resultNode.put("error", "NO_ATTRIBUTES_UPDATED");
+            return ResponseEntity.badRequest().body(resultNode);
+        }
 
     }
 
