@@ -29,7 +29,17 @@ public class Customer {
     private List<String> bookmarks;
     
     private String p_URL;
+
+    private List<String> locations;
     
+    public List<String> getLocations() {
+        return locations;
+    }
+
+    public void setLocations(List<String> locations) {
+        this.locations = locations;
+    }
+
     public String getusername() {
         return username;
     }
@@ -111,7 +121,7 @@ public class Customer {
     }
 
     public Customer(String username, String uUID, String email, String phone_Number, String gender, String firstName,
-            String lastName, String dateOfBirth, List<String> bookmarks, String p_URL) {
+            String lastName, String dateOfBirth, List<String> bookmarks, String p_URL, List<String> locations) {
         this.username = username;
         this.uUID = uUID;
         this.email = email;
@@ -122,6 +132,7 @@ public class Customer {
         this.dateOfBirth = dateOfBirth;
         this.bookmarks = bookmarks;
         this.p_URL = p_URL;
+        this.locations = locations;
     }
 
     public Customer() {

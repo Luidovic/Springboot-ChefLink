@@ -84,7 +84,7 @@ public class CustomerRestController {
         }
 
         Customer customer = new Customer(username, uUID, email, phone_number, gender, firstName, lastName, dateOfBirth,
-                bookmarks, p_URL);
+                bookmarks, p_URL, new ArrayList<>());
         customerService.saveCustomer(customer);
         return ResponseEntity.ok(responseNode);
     }
@@ -167,6 +167,14 @@ public class CustomerRestController {
                             bookmarksNode.add(bookmark);
                         }
                         resultNode.set(field, bookmarksNode);
+                    }
+                    case "locations" -> {
+                        List<String> locations = customer.getLocations();
+                        ArrayNode locationsNode = objectMapper.createArrayNode();
+                        for (String loc : locations) {
+                            locationsNode.add(loc);
+                        }
+                        resultNode.set(field, locationsNode);
                     }
                     case "username" -> resultNode.put(field, customer.getusername());
                 }
