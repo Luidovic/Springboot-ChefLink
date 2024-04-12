@@ -409,4 +409,10 @@ public class CustomerRestController {
 
     }
 
+    @GetMapping("/cron")
+    public ResponseEntity<ObjectNode> cron() {
+
+        return ResponseEntity.ok().body(null);
+    }
+
 }
