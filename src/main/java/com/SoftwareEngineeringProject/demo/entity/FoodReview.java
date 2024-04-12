@@ -39,5 +39,8 @@ public class FoodReview {
         this.id_user = id_user;
         this.id_food = id_food;
     }
+    public FoodReview() {
+        //TODO Auto-generated constructor stub
+    }
 
 }

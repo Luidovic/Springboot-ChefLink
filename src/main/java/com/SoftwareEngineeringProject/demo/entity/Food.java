@@ -22,6 +22,16 @@ public class Food {
     private List<FoodOption> options;
     private FoodCategory category;
 
+    private int ratings_count;
+
+    public int getRatings_count() {
+        return ratings_count;
+    }
+
+    public void setRatings_count(int ratings_count) {
+        this.ratings_count = ratings_count;
+    }
+
     public Food(String id_food, String name, double price, double total_rating, String picture, String timing,
             List<String> ingredients,
             String description,

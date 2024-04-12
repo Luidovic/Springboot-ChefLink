@@ -375,7 +375,7 @@ public class CustomerRestController {
                     break;
             }
         }
-
+        int counter = 0;
         Update update = new Update();
         for (int i = 0; i < toChange.size(); i++) {
             String attributeToChange = toChange.get(i);
@@ -383,17 +383,27 @@ public class CustomerRestController {
 
             if (attributeToChange.equals("username") || attributeToChange.equals("email")) {
                 continue;
+            } else {
+                counter++;
             }
             // System.out.println("Attribute to change now: " + attributeToChange);
             update.set(attributeToChange, newValue);
         }
-        UpdateResult updateResult = mongotemplate.updateFirst(q, update, Customer.class);
+        UpdateResult updateResult;
+        if (counter > 0) {
+            updateResult = mongotemplate.updateFirst(q, update, Customer.class);
 
-        if (updateResult.getModifiedCount() > 0) {
-            resultNode.put("success", "ATTRIBUTES_UPDATED");
-            return ResponseEntity.ok().body(resultNode);
+            if (updateResult.getModifiedCount() > 0) {
+                resultNode.put("success", "ATTRIBUTES_UPDATED");
+                return ResponseEntity.ok().body(resultNode);
+            } else {
+                resultNode.put("error", "NO_ATTRIBUTES_UPDATED");
+                return ResponseEntity.badRequest().body(resultNode);
+            }
+
         } else {
-            resultNode.put("error", "NO_ATTRIBUTES_UPDATED");
+            resultNode.put("error", "CANNOT_BE_UPDATED");
+            resultNode.put("info", "you only provided email and username");
             return ResponseEntity.badRequest().body(resultNode);
         }
 

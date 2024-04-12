@@ -18,6 +18,9 @@ public class FoodReviewService{
         return foodReviews;
     }
 
+    public void saveReview(FoodReview review) {
+        foodReviewRepository.save(review);
+    }
     
 
 }
