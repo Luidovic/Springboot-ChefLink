@@ -12,7 +12,7 @@ public interface ChefDAO extends MongoRepository<Chef, String> {
 
     public List<Chef> findByLastName(String LastName);
     
-    Chef findByUsernameChef(String usernameChef);
+    Chef findByUsername(String usernameChef);
     
     Chef findByuUID(String uUID);
 

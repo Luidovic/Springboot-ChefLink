@@ -35,9 +35,9 @@ public class ChefService {
 
         // Add other fields to update as needed
 
-        Chef chef = chefRepository.findByUsernameChef(userId);
+        Chef chef = chefRepository.findByUsername(userId);
         if (chef != null) {
-            Query query = Query.query(Criteria.where("usernameChef").is(userId));
+            Query query = Query.query(Criteria.where("username").is(userId));
             Update update = new Update();
             List<String> bookmarks = chef.getBookmarks();
             if (bookmarks == null) {

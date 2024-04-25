@@ -387,7 +387,7 @@ public class CustomerRestController {
             } else {
                 counter++;
             }
-            // System.out.println("Attribute to change now: " + attributeToChange);
+
             update.set(attributeToChange, newValue);
         }
         UpdateResult updateResult;

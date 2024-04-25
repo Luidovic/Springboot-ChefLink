@@ -7,10 +7,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "Chef")
 public class Chef {
 
-    private String usernameChef;
+    private String username;
     private String uUID;
     private String email;
-    private String phone_number;
+    private String phone_Number;
     private String gender;
     private String firstName;
     private String lastName;
@@ -20,13 +20,13 @@ public class Chef {
     private String p_URL;
     private List<String> locations;
 
-    public Chef(String usernameChef, String uUID, String email, String phone_number, String gender, String firstName,
+    public Chef(String username, String uUID, String email, String phone_Number, String gender, String firstName,
             String lastName, List<String> foodList, String dateOfBirth, List<String> bookmarks, String p_URL,
             List<String> locations) {
-        this.usernameChef = usernameChef;
+        this.username = username;
         this.uUID = uUID;
         this.email = email;
-        this.phone_number = phone_number;
+        this.phone_Number = phone_Number;
         this.gender = gender;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -37,12 +37,12 @@ public class Chef {
         this.locations = locations;
     }
 
-    public String getUsernameChef() {
-        return usernameChef;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUsernameChef(String usernameChef) {
-        this.usernameChef = usernameChef;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getuUID() {
@@ -61,12 +61,12 @@ public class Chef {
         this.email = email;
     }
 
-    public String getPhone_number() {
-        return phone_number;
+    public String getPhone_Number() {
+        return phone_Number;
     }
 
-    public void setPhone_number(String phone_number) {
-        this.phone_number = phone_number;
+    public void setPhone_Number(String phone_Number) {
+        this.phone_Number = phone_Number;
     }
 
     public String getGender() {
