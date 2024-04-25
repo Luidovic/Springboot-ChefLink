@@ -178,6 +178,7 @@ public class CustomerRestController {
                         }
                         resultNode.set(field, locationsNode);
                     }
+                    
                     case "username" -> resultNode.put(field, customer.getusername());
                 }
             }

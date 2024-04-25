@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 //import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.mongodb.DBObject;
+import com.mongodb.client.result.DeleteResult;
 
 @RestController
 @RequestMapping("/api/food")
@@ -185,6 +187,28 @@ public class FoodRestController {
             return new ResponseEntity<>(responseNode, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+    
+    @DeleteMapping("/DeleteFood")
+    private ResponseEntity<ObjectNode> DeleteFood(@RequestBody JsonNode req){
+        String id_food_s= req.get("id_food").asText();
+        ObjectMapper objectMapper= new ObjectMapper();
+        ObjectNode responseNode= objectMapper.createObjectNode();
+
+        if(!checkFoodExist(id_food_s)){
+            responseNode.put("error", "FOOD_NOT_FOUND");
+            return ResponseEntity.badRequest().body(responseNode);
+        }
+        Query query = new Query(Criteria.where("id_food").is(id_food_s));
+        DeleteResult deleteResult = mongotemplate.remove(query, Food.class);
+        
+        if (deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0) {
+            responseNode.put("success", "FOOD_DELETED");
+            return ResponseEntity.ok().body(responseNode);
+        } else {
+            responseNode.put("error", "FOOD_DELETION_FAILED");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseNode);
         }
 
     }

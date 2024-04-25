@@ -1,8 +1,10 @@
 package com.SoftwareEngineeringProject.demo.rest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -10,6 +12,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,6 +27,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 
 @RestController
 @RequestMapping("/api")
@@ -75,7 +80,13 @@ public class ChefRestController {
         JsonNode foodListNode = req.get("foodList");
         if (foodListNode.isArray()) {
             for (JsonNode food : foodListNode) {
-                foodList.add(food.asText());
+                String foodId = food.asText();
+                if (!checkFoodExist(foodId)) {
+                    responseNode.put("error", "CHEF_NOT_ADDED");
+                    responseNode.put("info", "Food with id " + foodId + " does not exist");
+                    return ResponseEntity.badRequest().body(responseNode);
+                }
+                foodList.add(foodId);
             }
         }
         // Validate attributes
@@ -119,8 +130,8 @@ public class ChefRestController {
             errorMessages.add("Email must not be empty");
         if (gender.isEmpty())
             errorMessages.add("Gender must not be empty");
-        if (locations.isEmpty())
-            errorMessages.add("Locations must not be empty");
+        // if (locations.isEmpty())
+        // errorMessages.add("Locations must not be empty");
         return errorMessages;
     }
 
@@ -289,4 +300,212 @@ public class ChefRestController {
         return ResponseEntity.ok(resultNode);
 
     }
+
+    @DeleteMapping("/DeleteChef")
+    private ResponseEntity<ObjectNode> DeleteChef(@RequestBody JsonNode req) {
+
+        String uUIDs = req.get("uUID").asText();
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode responseNode = objectMapper.createObjectNode();
+
+        if (!checkChefExist(uUIDs)) {
+            responseNode.put("error", "CHEF_NOT_FOUND");
+            return ResponseEntity.badRequest().body(responseNode);
+        }
+
+        Query query = new Query(Criteria.where("uUID").is(uUIDs));
+        DeleteResult deleteResult = mongotemplate.remove(query, Chef.class);
+        if (deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0) {
+            responseNode.put("success", "CHEF_DELETED");
+            return ResponseEntity.ok().body(responseNode);
+        } else {
+            responseNode.put("error", "CHEF_DELETION_FAILED");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseNode);
+        }
+
+    }
+
+    // @PutMapping("/UpdateInfoChef")
+    // private ResponseEntity<ObjectNode> updateInfo(@RequestBody JsonNode req) {
+
+    // String uUID = req.get("uUID").asText();
+
+    // ObjectMapper objectMapper = new ObjectMapper();
+    // ObjectNode resultNode = objectMapper.createObjectNode();
+    // resultNode.put("uUID", uUID);
+
+    // Query q = new Query(Criteria.where("uUID").is(uUID));
+    // Chef chef = mongotemplate.findOne(q, Chef.class);
+
+    // if (chef == null) {
+    // resultNode.put("error", "CHEF_NOT_FOUND");
+    // resultNode.put("info", "This chef is not in the database");
+    // return ResponseEntity.badRequest().body(resultNode);
+    // }
+    // List<String> AcceptedAttributes = new ArrayList<>();
+
+    // AcceptedAttributes.addAll(Arrays.asList("usernameChef", "uUID", "email",
+    // "phone_number", "gender", "firstName",
+    // "lastName", "foodList", "dateOfBirth", "bookmarks", "p_URL", "locations"));
+
+    // JsonNode toChangeNode = req.get("To Change");
+    // JsonNode newValuesNode = req.get("New Values");
+
+    // List<String> toChange = new ArrayList<>();
+    // List<String> newValues = new ArrayList<>();
+
+    // // JsonNode foodListToUpdateNode = req.get("New Values").get("foodList");
+    // // List<String> foodIdsToUpdate = new ArrayList<>();
+    // // for (JsonNode foodIdNode : foodListToUpdateNode) {
+    // // foodIdsToUpdate.add(foodIdNode.asText());
+    // // }
+
+    // // List<Food> foodList = mongotemplate.findAll(Food.class);
+    // // List<String> foodIds = new ArrayList<>();
+    // // for (Food food : foodList) {
+    // // foodIds.add(food.getId_food());
+    // // }
+
+    // // for (String foodId : foodIdsToUpdate) {
+    // // if (!foodIds.contains(foodId)) {
+    // // resultNode.put("error", "INVALID_FOOD_ID");
+    // // resultNode.put("info", "The food ID '" + foodId + "' is not valid");
+    // // return ResponseEntity.badRequest().body(resultNode);
+    // // }
+    // // }
+
+    // for (JsonNode node : toChangeNode) {
+    // toChange.add(node.asText());
+    // }
+    // for (JsonNode node : newValuesNode) {
+    // newValues.add(node.asText());
+    // }
+
+    // if (toChange.size() != newValues.size()) {
+    // resultNode.put("error", "LIST_LENGTH_MISMATCH");
+    // return ResponseEntity.badRequest().body(resultNode);
+    // }
+
+    // for (int i = 0; i < toChange.size(); i++) {
+    // String attribute = toChange.get(i);
+
+    // if (!AcceptedAttributes.contains(attribute)) {
+    // resultNode.put("error", "ATTRIBUTE_NOT_FOUND");
+    // resultNode.put("info", attribute + " is not present in the Database");
+    // }
+
+    // }
+
+    // for (int i = 0; i < toChange.size(); i++) {
+    // String attributeToChange = toChange.get(i);
+    // String newValue = newValues.get(i);
+
+    // switch (attributeToChange) {
+    // case "usernameChef":
+    // resultNode.put("usernameChef", "cannot be changed");
+    // break;
+
+    // case "uUID":
+    // resultNode.put("uUID", "cannot be changed");
+    // break;
+
+    // case "email":
+    // resultNode.put("email", "cannot be changed");
+    // break;
+
+    // case "phone_Number":
+    // chef.setPhone_number(newValue);
+    // break;
+
+    // case "gender":
+    // chef.setGender(newValue);
+    // break;
+
+    // case "firstName":
+    // chef.setFirstName(newValue);
+    // break;
+
+    // case "lastName":
+    // chef.setLastName(newValue);
+    // break;
+
+    // case "dateOfBirth":
+    // chef.setDateOfBirth(newValue);
+    // break;
+
+    // case "p_URL":
+    // chef.setP_URL(newValue);
+    // break;
+
+    // case "foodList":
+    // JsonNode foodListToUpdateNode = newValuesNode.get("foodList");
+    // List<String> foodIdsToUpdate = new ArrayList<>();
+    // for (JsonNode foodIdNode : foodListToUpdateNode) {
+    // foodIdsToUpdate.add(foodIdNode.asText());
+    // }
+
+    // List<Food> foodList = mongotemplate.findAll(Food.class);
+    // List<String> foodIds = new ArrayList<>();
+    // for (Food food : foodList) {
+    // foodIds.add(food.getId_food());
+    // }
+
+    // for (String foodId : foodIdsToUpdate) {
+    // if (!foodIds.contains(foodId)) {
+    // resultNode.put("error", "INVALID_FOOD_ID");
+    // resultNode.put("info", "The food ID '" + foodId + "' is not valid");
+    // return ResponseEntity.badRequest().body(resultNode);
+    // }
+    // }
+
+    // chef.setFoodList(foodIdsToUpdate);
+    // break;
+
+    // case "locations":
+    // List<String> existingLocations = chef.getLocations();
+    // existingLocations.addAll(newValues); // Assuming newValues contains the new
+    // locations
+    // chef.setLocations(existingLocations);
+    // break;
+
+    // default:
+    // break;
+    // }
+    // }
+    // int counter = 0;
+
+    // Update update = new Update();
+    // for (int i = 0; i < toChange.size(); i++) {
+    // String attributeToChange = toChange.get(i);
+    // String newValue = newValues.get(i);
+
+    // if (attributeToChange.equals("usernameChef") ||
+    // attributeToChange.equals("email")
+    // || attributeToChange.equals("uUID")) {
+    // continue;
+    // } else {
+    // counter++;
+    // }
+    // update.set(attributeToChange, newValue);
+    // }
+    // UpdateResult updateResult;
+    // if (counter > 0) {
+    // updateResult = mongotemplate.updateFirst(q, update, Chef.class);
+
+    // if (updateResult.getModifiedCount() > 0) {
+    // resultNode.put("success", "ATTRIBUTES_UPDATED");
+    // return ResponseEntity.ok().body(resultNode);
+    // } else {
+    // resultNode.put("error", "NO_ATTRIBUTES_UPDATED");
+    // return ResponseEntity.badRequest().body(resultNode);
+    // }
+
+    // } else {
+    // resultNode.put("error", "CANNOT_BE_UPDATED");
+    // resultNode.put("info", "you only provided email and username");
+    // return ResponseEntity.badRequest().body(resultNode);
+    // }
+
+    // }
+
 }
