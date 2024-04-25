@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.SoftwareEngineeringProject.demo.dao.FoodService;
+import com.SoftwareEngineeringProject.demo.entity.Chef;
 import com.SoftwareEngineeringProject.demo.entity.Food;
 import com.SoftwareEngineeringProject.demo.subEntity.FoodOption;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -189,20 +191,20 @@ public class FoodRestController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
-    
-    @DeleteMapping("/DeleteFood")
-    private ResponseEntity<ObjectNode> DeleteFood(@RequestBody JsonNode req){
-        String id_food_s= req.get("id_food").asText();
-        ObjectMapper objectMapper= new ObjectMapper();
-        ObjectNode responseNode= objectMapper.createObjectNode();
 
-        if(!checkFoodExist(id_food_s)){
+    @DeleteMapping("/DeleteFood")
+    private ResponseEntity<ObjectNode> DeleteFood(@RequestBody JsonNode req) {
+        String id_food_s = req.get("id_food").asText();
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode responseNode = objectMapper.createObjectNode();
+
+        if (!checkFoodExist(id_food_s)) {
             responseNode.put("error", "FOOD_NOT_FOUND");
             return ResponseEntity.badRequest().body(responseNode);
         }
         Query query = new Query(Criteria.where("id_food").is(id_food_s));
         DeleteResult deleteResult = mongotemplate.remove(query, Food.class);
-        
+
         if (deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0) {
             responseNode.put("success", "FOOD_DELETED");
             return ResponseEntity.ok().body(responseNode);
@@ -212,5 +214,45 @@ public class FoodRestController {
         }
 
     }
+
+    @GetMapping("/GetInformationFood")
+    private ResponseEntity<ObjectNode> getInformationFood(@RequestParam String id){
+
+        Chef chef = mongotemplate.findOne(new Query(Criteria.where("uUID").is(id)), Chef.class);
+        ObjectMapper objectMapper=new ObjectMapper();
+        ObjectNode resultNode= objectMapper.createObjectNode();
+        
+        if(chef==null){
+            resultNode.put("error","CHEF_NOT_FOUND");
+            return ResponseEntity.badRequest().body(resultNode);
+        }
+        List<String> foodIds=chef.getFoodList();
+        ArrayNode foodInfoArray = objectMapper.createArrayNode();
+    
+        // Retrieve food information for each food id
+        for (String foodId : foodIds) {
+            Query foodQuery = new Query(Criteria.where("id_food").is(foodId));
+            Food food = mongotemplate.findOne(foodQuery, Food.class);
+            
+            // Check if food exists
+            if (food != null) {
+                ObjectNode foodInfo = objectMapper.createObjectNode();
+                foodInfo.put("id_food", food.getId_food());
+                foodInfo.put("Name", food.getName());
+                foodInfo.put("p_URL", food.getPicture());
+                foodInfo.put("rating", food.getTotal_rating());
+                
+                // Add food information to the array
+                foodInfoArray.add(foodInfo);
+            }
+        }
+        
+        resultNode.put("chef_id", chef.getuUID());
+        resultNode.set("food_information", foodInfoArray);
+        
+        return ResponseEntity.ok(resultNode);
+        
+    }
+
 
 }

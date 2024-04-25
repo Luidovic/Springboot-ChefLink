@@ -416,39 +416,41 @@ public class ChefRestController {
                     break;
 
                 // case "foodList":
-                //     JsonNode foodListToUpdateNode = newValuesNode.get("foodList");
-                //     List<String> foodIdsToUpdate = new ArrayList<>();
-                //     for (JsonNode foodIdNode : foodListToUpdateNode) {
-                //         foodIdsToUpdate.add(foodIdNode.asText());
-                //     }
+                // JsonNode foodListToUpdateNode = newValuesNode.get("foodList");
+                // List<String> foodIdsToUpdate = new ArrayList<>();
+                // for (JsonNode foodIdNode : foodListToUpdateNode) {
+                // foodIdsToUpdate.add(foodIdNode.asText());
+                // }
 
-                //     List<Food> foodList = mongotemplate.findAll(Food.class);
-                //     List<String> foodIds = new ArrayList<>();
-                //     for (Food food : foodList) {
-                //         foodIds.add(food.getId_food());
-                //     }
+                // List<Food> foodList = mongotemplate.findAll(Food.class);
+                // List<String> foodIds = new ArrayList<>();
+                // for (Food food : foodList) {
+                // foodIds.add(food.getId_food());
+                // }
 
-                //     List<String> invalidFoodIds = new ArrayList<>();
-                //     for (String foodId : foodIdsToUpdate) {
-                //         if (!foodIds.contains(foodId)) {
-                //             invalidFoodIds.add(foodId);
-                //         }
-                //     }
+                // List<String> invalidFoodIds = new ArrayList<>();
+                // for (String foodId : foodIdsToUpdate) {
+                // if (!foodIds.contains(foodId)) {
+                // invalidFoodIds.add(foodId);
+                // }
+                // }
 
-                //     if (!invalidFoodIds.isEmpty()) {
-                //         resultNode.put("error", "INVALID_FOOD_IDS");
-                //         resultNode.put("info", "The following food IDs are not valid: " + invalidFoodIds);
-                //         return ResponseEntity.badRequest().body(resultNode);
-                //     }
+                // if (!invalidFoodIds.isEmpty()) {
+                // resultNode.put("error", "INVALID_FOOD_IDS");
+                // resultNode.put("info", "The following food IDs are not valid: " +
+                // invalidFoodIds);
+                // return ResponseEntity.badRequest().body(resultNode);
+                // }
 
-                //     chef.getFoodList().addAll(foodIdsToUpdate);
-                //     break;
+                // chef.getFoodList().addAll(foodIdsToUpdate);
+                // break;
 
                 // case "locations":
-                //     List<String> existingLocations = chef.getLocations();
-                //     existingLocations.addAll(newValues); // Assuming newValues contains the new locations
-                //     chef.setLocations(existingLocations);
-                //     break;
+                // List<String> existingLocations = chef.getLocations();
+                // existingLocations.addAll(newValues); // Assuming newValues contains the new
+                // locations
+                // chef.setLocations(existingLocations);
+                // break;
 
                 default:
                     break;
@@ -489,6 +491,96 @@ public class ChefRestController {
 
     }
 
+    @PutMapping("/UpdateFoodList")
+    private ResponseEntity<ObjectNode> updateFoodList(@RequestBody JsonNode req) {
 
+        String uUIDs = req.get("uUID").asText();
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode resultNode = objectMapper.createObjectNode();
+
+        if (!checkChefExist(uUIDs)) {
+            resultNode.put("error", "CHEF_NOT_FOUND");
+            return ResponseEntity.badRequest().body(resultNode);
+        }
+
+        JsonNode foodList = req.get("foodList");
+        List<String> FoodListID = new ArrayList<>();
+
+        for (JsonNode node : foodList) {
+            FoodListID.add(node.asText());
+        }
+
+        for (int i = 0; i < FoodListID.size(); i++) {
+            String current = FoodListID.get(i);
+            if (!checkFoodExist(current)) {
+                resultNode.put("error", "FOOD_NOT_FOUND");
+                return ResponseEntity.badRequest().body(resultNode);
+            }
+        }
+        Query q = new Query(Criteria.where("uUID").is(uUIDs));
+        Chef chef = mongotemplate.findOne(q, Chef.class);
+
+        if (chef == null) {
+            resultNode.put("error", "CHEF_NOT_FOUND");
+            return ResponseEntity.badRequest().body(resultNode);
+        }
+        Update update = new Update();
+    
+        update.set("foodList", FoodListID);
+    
+        // Perform the update operation
+        UpdateResult updateResult = mongotemplate.updateFirst(q, update, Chef.class);
+    
+        if (updateResult.getModifiedCount() > 0) {
+            resultNode.put("success", "FOOD_LIST_UPDATED");
+            return ResponseEntity.ok().body(resultNode);
+        } else {
+            resultNode.put("error", "FOOD_LIST_NOT_UPDATED");
+            return ResponseEntity.badRequest().body(resultNode);
+        }
+    }
+
+    @PutMapping("/UpdateChefLocation")
+    private ResponseEntity<ObjectNode> updateChefLocation(@RequestBody JsonNode req){
+        
+        String uUIDs = req.get("uUID").asText();
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode resultNode = objectMapper.createObjectNode();
+
+        if (!checkChefExist(uUIDs)) {
+            resultNode.put("error", "CHEF_NOT_FOUND");
+            return ResponseEntity.badRequest().body(resultNode);
+        }
+
+        JsonNode LocationNode = req.get("Locations");
+        List<String> Locations = new ArrayList<>();
+
+        for (JsonNode node : LocationNode) {
+            Locations.add(node.asText());
+        }
+
+        Query q = new Query(Criteria.where("uUID").is(uUIDs));
+        Chef chef = mongotemplate.findOne(q, Chef.class);
+
+        if (chef == null) {
+            resultNode.put("error", "CHEF_NOT_FOUND");
+            return ResponseEntity.badRequest().body(resultNode);
+        }
+        Update update = new Update();
+        update.set("locations", Locations);
+    
+        // Perform the update operation
+        UpdateResult updateResult = mongotemplate.updateFirst(q, update, Chef.class);
+    
+        if (updateResult.getModifiedCount() > 0) {
+            resultNode.put("success", "LOCATION_LIST_UPDATED");
+            return ResponseEntity.ok().body(resultNode);
+        } else {
+            resultNode.put("error", "LOCATION_LIST_NOT_UPDATED");
+            return ResponseEntity.badRequest().body(resultNode);
+        }
+    }
+
+    
 
 }
