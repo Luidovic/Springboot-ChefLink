@@ -216,24 +216,24 @@ public class FoodRestController {
     }
 
     @GetMapping("/GetInformationFood")
-    private ResponseEntity<ObjectNode> getInformationFood(@RequestParam String id){
+    private ResponseEntity<ObjectNode> getInformationFood(@RequestParam String id) {
 
         Chef chef = mongotemplate.findOne(new Query(Criteria.where("uUID").is(id)), Chef.class);
-        ObjectMapper objectMapper=new ObjectMapper();
-        ObjectNode resultNode= objectMapper.createObjectNode();
-        
-        if(chef==null){
-            resultNode.put("error","CHEF_NOT_FOUND");
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode resultNode = objectMapper.createObjectNode();
+
+        if (chef == null) {
+            resultNode.put("error", "CHEF_NOT_FOUND");
             return ResponseEntity.badRequest().body(resultNode);
         }
-        List<String> foodIds=chef.getFoodList();
+        List<String> foodIds = chef.getFoodList();
         ArrayNode foodInfoArray = objectMapper.createArrayNode();
-    
+
         // Retrieve food information for each food id
         for (String foodId : foodIds) {
             Query foodQuery = new Query(Criteria.where("id_food").is(foodId));
             Food food = mongotemplate.findOne(foodQuery, Food.class);
-            
+
             // Check if food exists
             if (food != null) {
                 ObjectNode foodInfo = objectMapper.createObjectNode();
@@ -241,18 +241,17 @@ public class FoodRestController {
                 foodInfo.put("Name", food.getName());
                 foodInfo.put("p_URL", food.getPicture());
                 foodInfo.put("rating", food.getTotal_rating());
-                
+
                 // Add food information to the array
                 foodInfoArray.add(foodInfo);
             }
         }
-        
+
         resultNode.put("chef_id", chef.getuUID());
         resultNode.set("food_information", foodInfoArray);
-        
-        return ResponseEntity.ok(resultNode);
-        
-    }
 
+        return ResponseEntity.ok(resultNode);
+
+    }
 
 }
