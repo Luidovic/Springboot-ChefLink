@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.SoftwareEngineeringProject.demo.dao.ChefService;
 import com.SoftwareEngineeringProject.demo.dao.CustomerService;
 import com.SoftwareEngineeringProject.demo.dao.FoodReviewService;
 import com.SoftwareEngineeringProject.demo.dao.FoodService;
+import com.SoftwareEngineeringProject.demo.entity.Chef;
 import com.SoftwareEngineeringProject.demo.entity.Customer;
 import com.SoftwareEngineeringProject.demo.entity.Food;
 import com.SoftwareEngineeringProject.demo.entity.FoodReview;
@@ -41,13 +43,15 @@ public class FoodReviewRestController {
     private FoodService foodService;
     private MongoTemplate mongoTemplate;
     private CustomerService customerService;
+    private ChefService chefService;
 
     public FoodReviewRestController(FoodReviewService foodReviewService, FoodService foodService,
-            MongoTemplate mongoTemplate, CustomerService customerService) {
+            MongoTemplate mongoTemplate, CustomerService customerService, ChefService chefService) {
         this.foodReviewService = foodReviewService;
         this.foodService = foodService;
         this.mongoTemplate = mongoTemplate;
         this.customerService = customerService;
+        this.chefService = chefService;
     }
 
     @GetMapping("/get_by_food_id") // Tested the major Cases
@@ -75,18 +79,25 @@ public class FoodReviewRestController {
         ArrayNode customersNode = objectMapper.createArrayNode();
 
         for (FoodReview f : foodReviews) {
+            String username = "";
             ObjectNode customerNode = objectMapper.createObjectNode();
             Customer customer = customerService.findCustomerById(f.getID_User());
 
             if (customer == null) {
-                customerNode.put("error", "CUSTOMER_NOT_FOUND");
-                customerNode.put("info", "The customer is not present in the database");
-                return ResponseEntity.badRequest().body(customerNode);
+                Chef chef = chefService.findChefById(f.getID_User());
+                if (chef == null) {
+                    customerNode.put("error", "USER_NOT_FOUND");
+                    customerNode.put("info", "The user is not present in the database");
+                    return ResponseEntity.badRequest().body(customerNode);
+                }
+                username = chef.getUsername();
+            } else {
+                username = customer.getusername();
             }
+            
 
             customerNode.put("customer ID", f.getID_User());
-            customerNode.put("username", customer.getusername());
-            customerNode.put("Profile Picture", customer.getP_URL());
+            customerNode.put("username", username);
             customerNode.put("comment", f.getComment());
             customerNode.put("rating", f.getRating());
             customersNode.add(customerNode);
@@ -146,6 +157,11 @@ public class FoodReviewRestController {
         return mongoTemplate.exists(q, Customer.class);
     }
 
+    private boolean checkchef(String user) {
+        Query q = new Query(Criteria.where("uUID").is(user));
+        return mongoTemplate.exists(q, Chef.class);
+    }
+
     private boolean checkfood(String food) {
         Query q = new Query(Criteria.where("id_food").is(food));
         return mongoTemplate.exists(q, Food.class);
@@ -172,5 +188,51 @@ public class FoodReviewRestController {
                 .inc("ratings_count", 1); // Increment ratings_count
 
         mongoTemplate.updateFirst(q, update, Food.class);
+    }
+
+    @PostMapping("/AddreviewChef")
+    public ResponseEntity<ObjectNode> AddreviewChef(@RequestBody JsonNode req) {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode resultNode = objectMapper.createObjectNode();
+
+        String user = req.get("id_user").asText();
+        String food = req.get("id_food").asText();
+        String commentS = req.get("comment").asText();
+        // String rating= req.get("rating").asText();
+        JsonNode ratingNode = req.get("rating");
+
+        if (!checkchef(user)) {
+            resultNode.put("error", "CHEF_NOT_FOUND");
+        }
+        if (!checkfood(food)) {
+            resultNode.put("error", "FOOD_NOT_FOUND");
+        }
+        if (ratingNode == null || !ratingNode.isDouble()) {
+            resultNode.put("error", "RATING_NOT_DOUBLE");
+        }
+
+        if(ratingNode.asDouble()>5){
+            resultNode.put("error", "RATING_ABOVE_5");
+        }
+
+        if (!checkchef(user) || !checkfood(food) || ratingNode == null || !ratingNode.isDouble()||ratingNode.asDouble()>5) {
+            return ResponseEntity.badRequest().body(resultNode);
+        }
+        // now the user exists and the food exists and the rating is a double.
+        updateTotalRating(food, ratingNode.asDouble());
+
+        double rating = ratingNode.asDouble();
+
+        // Create a new FoodReview instance
+        FoodReview review = new FoodReview();
+        review.setId_food(food);
+        review.setID_User(user);
+        review.setRating(rating);
+        review.setComment(commentS);
+
+        foodReviewService.saveReview(review);
+        resultNode.put("success", "REVIEW_ADDED");
+        return ResponseEntity.ok().body(resultNode);
     }
 }
