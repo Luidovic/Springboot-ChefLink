@@ -9,13 +9,25 @@ public class Bundle {
     private String id_options;
     private int quantity;
     private String special_instructions;
+    private String id_chef;
 
-    public Bundle(String id_bundle, String id_food, String id_options, int quantity, String special_instructions) {
-        this.id_bundle = id_bundle;
-        this.id_food = id_food;
+    
+    public Bundle(String id_bundle, String id_food, String id_options, int quantity, String special_instructions,
+            String id_chef) {
+                this.id_bundle = id_bundle;
+                this.id_food = id_food;
         this.id_options = id_options;
         this.quantity = quantity;
         this.special_instructions = special_instructions;
+        this.id_chef = id_chef;
+    }
+
+    public String getId_chef() {
+        return id_chef;
+    }
+
+    public void setId_chef(String id_chef) {
+        this.id_chef = id_chef;
     }
 
     public String getId_bundle() {
